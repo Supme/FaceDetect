@@ -1,0 +1,54 @@
+body{
+    background-color: #000000;
+}
+
+#face{
+    width: 320px;
+    height: 240px;
+    transform: scaleX(-1);
+    -o-transform: scaleX(-1);
+    -ms-transform: scaleX(-1);
+    -moz-transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+    position:absolute;
+    top: 200px;
+    left: 550px;
+    z-index: 300;
+}
+
+#mask{
+    position:absolute;
+    top: 52px;
+    left: 5px;
+    z-index: 500;
+}
+
+#poster{
+    position:absolute;
+    top: 52px;
+    left: 5px;
+    z-index: 1000;
+}
+
+#info{
+    width: 100%;
+    position:absolute;
+    top: 0;
+    margin-left: auto ;
+    margin-right: auto ;
+    text-align: center;
+}
+
+label.valid {
+    width: 24px;
+    height: 24px;
+    background: url(../img/valid.png) center center no-repeat;
+    display: inline-block;
+    text-indent: -9999px;
+}
+label.error {
+    font-weight: bold;
+    color: red;
+    padding: 2px 8px;
+    margin-top: 2px;
+}

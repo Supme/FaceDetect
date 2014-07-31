@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" type='text/css' media='all' rel="stylesheet">
+    <link href="css/app.css" type='text/css' media='all' rel='stylesheet'/>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type='text/javascript' src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type='text/javascript' src='js/jquery.validate.js'></script>
+    <script type='text/javascript' src='js/app.js'></script>
+    <script type="text/javascript" src="js/sound.js" charset="UTF-8"></script>
+    <script type="text/javascript" src="js/keyboard.js" charset="UTF-8"></script>
+    <link href="css/keyboard.css" type='text/css' media='all' rel="stylesheet">
+
+<body>
+
+<div id="info">
+    <div class="alert alert-danger">
+        <strong>Подождите, инициализация...</strong>
+    </div>
+</div>
+
+<img id="poster" src="./masks/pokemon.png"/>
+<img id="mask" src="./masks/pokemon_.png"/>
+
+<div id="face">
+    <video id="video" width="640" height="480" autoplay="autoplay"></video>
+</div>
+<canvas id="canvas" width="640" height="480" style="display:none"></canvas>
+
+<div class="modal fade" id="form-modal" tabindex="-1" role="dialog" aria-labelledby="form-modal" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="tab-content">
+                    <div class="tab-pane active">
+                        <form id="contact-form" class="form-horizontal">
+                            <fieldset>
+                                <legend>
+                                    Теперь небольшая анкета<br/>
+                                    <small>(тут что то заполнить надо)</small><br/>
+                                    <div id="qrcode"></div>
+                                </legend>
+
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="fname">Имя</label>
+                                    <div class="col-md-8">
+                                        <input id="fname" name="fname" placeholder="Ваше имя" class="form-control input-md keyboardInput" lang="ru" required="" type="text">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="lname">Фамилия</label>
+                                    <div class="col-md-8">
+                                        <input id="lname" name="lname" placeholder="Ваша фамилия" class="form-control input-md keyboardInput" lang="ru" required="" type="text">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="sex">Ваш пол</label>
+                                    <div class="col-md-4">
+                                        <select id="sex" name="sex" class="form-control">
+                                            <option value="male">Мужской</option>
+                                            <option value="female">Женский</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="fname">E-mail</label>
+                                    <div class="col-md-8">
+                                        <input id="email" name="email" placeholder="ваш@e.mail" class="form-control input-md keyboardInput" required="" type="text">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-md-4 control-label" for="agree">
+                                        Согласен с условиями<br/>
+                                        <p class="small help-block"><a href='#'>Условия использования сервиса</a></p>
+                                    </label>
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            <input id="agree" name="agree" class="form-control" type="checkbox">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!--input id="fid" type="hidden" name="fid" value=""/-->
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary btn-large">Отправить</button>
+                                    <button class="btn" onclick="clearForm()">Очистить</button>
+                                </div>
+
+                            </fieldset>
+                        </form>
+
+                        <script type="text/javascript">
+
+                            $('#contact-form').validate({
+                                rules: {
+                                    fname: {
+                                        minlength: 2,
+                                        required: true
+                                    },
+                                    lname: {
+                                        minlength: 2,
+                                        required: true
+                                    },
+                                    email: {
+                                        required: true,
+                                        email: true
+                                    },
+                                    agree: {
+                                        required: true
+                                    }        },
+                                highlight: function(element) {
+                                    $(element).closest('.control-group').removeClass('success').addClass('error');
+                                },
+                                success: function(element) {
+                                    element
+                                            .text('OK!').addClass('valid')
+                                            .closest('.control-group').removeClass('error').addClass('success');
+                                }
+                            });
+
+                            $( "#submit" ).click();
+                        </script>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+</body>
+</html>
