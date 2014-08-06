@@ -39,26 +39,44 @@ $config = [
 
 include_once 'application.php';
 
+// Проверим есть ли у клиента id сессии
 session_start();
+// и если нет, создадим
 if(!isset($_SESSION['id'])){
     $_SESSION['id'] = application::getRandom(20);
 }
 
 // Временный файл
-$config['tmp_file'] = 'tmp/'.$_SESSION['id'].'.jpg';
+$tmp_dir = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+$config['tmp_file'] = $tmp_dir.DIRECTORY_SEPARATOR.$_SESSION['id'].'.jpg';
+
+// закроем и запишем сессию, чтобы не блокировать доступ если клиент еще чего захочет попросить пока мы выполняемся
+session_write_close();
 
 $app = new application($config);
 
-if(isset($_POST['detectFace'])){
-    $result['isFace'] = $app->isFace();
-}
-if(isset($_POST['flashFace'])){
-    $result = $app->flashFace();
-}
-if(isset($_POST['sendForm'] )){
-    $result = $app->sendForm();
+if(isset($_POST['action'])){
+    $result = [];
+    switch($_POST['action']){
+        case 'detectFace':
+            $result['isFace'] = $app->isFace();
+            break;
+        case 'flashFace':
+            $result['formId'] = $app->flashFace();
+            break;
+        case 'sendForm':
+            $result['status'] = $app->sendForm();
+            break;
+        default:
+            $result['error'] = 'No such action';
+    }
+
+    // Выдаем результат
+    header('Content-Type: application/json');
+    echo json_encode($result);
+
+} else {
+
+    echo '<h2 style="text-align: center">Well, what are you like to see?</h2>';
 }
 
-// Выдаем результат
-header('Content-Type: application/json');
-echo json_encode($result);

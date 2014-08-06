@@ -125,7 +125,7 @@ window.setInterval(function(){
             type: "POST",
             url: "app.php",
             data: {
-                detectFace: true,
+                action: 'detectFace',
                 imgBase64: base64dataUrl
             },
             success:function( msg ) {
@@ -149,7 +149,7 @@ function flashFace(){
         type: "POST",
         url: "app.php",
         data: {
-            flashFace: true,
+            action: 'flashFace',
             imgBase64: base64dataUrl
         },
         success:function( msg ) {

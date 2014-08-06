@@ -24,24 +24,32 @@ class application {
 
     public function sendForm(){
 
-        $result['status'] = true;
 
-        return $result;
+        return true;
     }
 
     public function flashFace(){
 
         $formId = $this->getRandom(5);
 
-        $fotoName = 'photo/'.$this->getRandom(10).'.jpg';
+        $fotoName = $this->getRandom(10);
+
+        $fotoFolder = 'foto';
+
+        $this->getImage($fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'.jpg');
 
         // ToDo запись в базу
+        // А пока просто тест
 
-        $this->getImage($fotoName);
+        $image = imagecreatefromjpeg($fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'.jpg');
+        $image = $this->cropImage($image,120, 30, 420, 450);
+        imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_crop.jpg');
+        $image = $this->resizeImage($image, 357, 500);
+        imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_resize.jpg');
+        $image = $this->rotateImage($image,253);
+        imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_rotate.jpg');
 
-        $result['formId'] = $formId;
-
-        return $result;
+        return $formId;
     }
 
     public function isFace(){
@@ -54,6 +62,16 @@ class application {
                 return false;
             }
         }
+    }
+
+    public function getRandom($size){
+        $chars="qazxswedcvfrtgbnhyujmkiolp1234567890QAZXSWEDCVFRTGBNHYUJMKIOLP";
+        $lenght=StrLen($chars)-1;
+        $result=null;
+        while($size--)
+            $result.=$chars[rand(0,$lenght)];
+
+        return $result;
     }
 
     private function getImage($file){
@@ -76,14 +94,25 @@ class application {
         }
     }
 
-    public function getRandom($size){
-        $chars="qazxswedcvfrtgbnhyujmkiolp1234567890QAZXSWEDCVFRTGBNHYUJMKIOLP";
-        $lenght=StrLen($chars)-1;
-        $result=null;
-        while($size--)
-            $result.=$chars[rand(0,$lenght)];
 
-        return $result;
+// Хелперы для работы с изображениями
+
+    private function cropImage($image, $fromX, $fromY, $toX, $toY){
+        $width = $toX - $fromX;
+        $height = $toY - $fromY;
+        $imageCroped = imagecreatetruecolor($width, $height);
+        imagecopyresampled($imageCroped, $image, 0, 0, $fromX, $fromY, $width, $height, $width, $height);
+        return $imageCroped;
+    }
+
+    private function resizeImage($image, $width, $height){
+        $imageResized = imagecreatetruecolor($width, $height);
+        imagecopyresampled($imageResized, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
+        return $imageResized;
+    }
+
+    private function rotateImage($image, $angle){
+        return imagerotate($image, $angle, hexdec('FFFFFF'));
     }
 
 }

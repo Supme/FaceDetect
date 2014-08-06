@@ -39,7 +39,7 @@
             <div class="modal-body">
                 <div class="tab-content">
                     <div class="tab-pane active">
-                        <form id="contact-form" class="form-horizontal">
+                        <form id="contact-form" class="form-horizontal" action="app.php" method="pot">
                             <fieldset>
                                 <legend>
                                     Теперь небольшая анкета<br/>
@@ -91,6 +91,7 @@
                                 </div>
 
                                 <!--input id="fid" type="hidden" name="fid" value=""/-->
+                                <input type="hidden" value="sendForm" name="action" />
 
                                 <div class="form-actions">
                                     <button type="submit" class="btn btn-primary btn-large">Отправить</button>
