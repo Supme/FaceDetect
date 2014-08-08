@@ -14,7 +14,7 @@
  */
 
 // Конфигурационные переменные
-var flashWait = 5; // секунды до снимка
+var flashWait = 3; // секунды до снимка
 var formWait = 30; // секунды до таймаута заполнения формы, если морда исчезла
 var formAddress = 'http://test.dmbasis.ru/?id='; // где потом можно заполнить форму будет?
 
@@ -179,8 +179,7 @@ function showForm($show){
 function clearForm(){
     VKI_close();
     $('#qrcode').html('');
-    $('input').removeAttr('checked');
-    $('input').val('');
+    $('input').removeAttr('checked').val('');
     $('label.error').remove();
 }
 
@@ -208,8 +207,3 @@ function showPoster(show){
 
 }
 
-function debug($var){
-    $var.forEach(function(element, index, array){
-        console.log("var[" + index + "] = " + element);
-    })
-}

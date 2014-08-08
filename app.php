@@ -38,12 +38,15 @@ $config = [
 //--------------------------------------------------------------
 
 include_once 'application.php';
+//include_once 'libs/GifCreator/AnimGif.php';
+
+$app = new application($config);
 
 // Проверим есть ли у клиента id сессии
 session_start();
 // и если нет, создадим
 if(!isset($_SESSION['id'])){
-    $_SESSION['id'] = application::getRandom(20);
+    $_SESSION['id'] = $app->getRandom(20);
 }
 
 // Временный файл
@@ -53,7 +56,6 @@ $config['tmp_file'] = $tmp_dir.DIRECTORY_SEPARATOR.$_SESSION['id'].'.jpg';
 // закроем и запишем сессию, чтобы не блокировать доступ если клиент еще чего захочет попросить пока мы выполняемся
 session_write_close();
 
-$app = new application($config);
 
 if(isset($_POST['action'])){
     $result = [];
@@ -77,6 +79,10 @@ if(isset($_POST['action'])){
 
 } else {
 
-    echo '<h2 style="text-align: center">Well, what are you like to see?</h2>';
+    echo '
+    <h2 style="text-align: center">
+        Well, what are you like to see?
+            <small><code>(Короче, чего ты тут потерял?)</code></small>
+    </h2>';
 }
 

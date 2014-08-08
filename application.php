@@ -42,12 +42,46 @@ class application {
         // А пока просто тест
 
         $image = imagecreatefromjpeg($fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'.jpg');
-        $image = $this->cropImage($image,120, 30, 420, 450);
+
+        $pokemon = $this->mergeImage(
+            $image,
+            imagecreatefrompng('/home/aagafonov/PhpstormProjects/test/public/masks/morda.png'),
+            0,
+            0
+        );
+        imagejpeg($pokemon, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_glass.jpg');
+
+        // Соотношение сторон вырезанного прямоугольника 0.715
+        $image = $this->cropImage($image,255, 25, 775, 753);
         imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_crop.jpg');
-        $image = $this->resizeImage($image, 357, 500);
-        imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_resize.jpg');
-        $image = $this->rotateImage($image,253);
-        imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_rotate.jpg');
+
+        //-----------------------------------------------------------------------------------------
+        //$resize = $this->resizeImage($image, 112, 160);
+        //imagejpeg($resize, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_resize.jpg');
+
+        //$this->imageRoll($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_bun.gif');
+
+        //$image = $this->rotateImage($image,0);
+        //imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_rotate.jpg');
+
+        //-----------------------------------------------------------------------------------------
+        // merge for pokemon 1
+        $pokemon = $this->mergeImage(
+            $this->resizeImage($image, 298, 416),
+            imagecreatefrompng('/home/aagafonov/PhpstormProjects/test/public/masks/pokemon_.png'),
+            450,
+            100
+        );
+        imagejpeg($pokemon, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_pokemon1.jpg');
+
+        // merge for pokemon 2
+        $pokemon = $this->mergeImage(
+            $this->resizeImage($image, 186, 300),
+            imagecreatefrompng('/home/aagafonov/PhpstormProjects/test/public/masks/youloveit.png'),
+            570,
+            480
+        );
+        imagejpeg($pokemon, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_pokemon2.jpg');
 
         return $formId;
     }
@@ -115,4 +149,35 @@ class application {
         return imagerotate($image, $angle, hexdec('FFFFFF'));
     }
 
+    private function mergeImage($imageBottom, $imageTop, $xBottom=0, $yBottom=0, $xTop=0, $yTop=0){
+        $imageMerge = imagecreatetruecolor(imagesx($imageTop), imagesy($imageTop));
+
+        // Сохраняем альфа-канал.
+        imagesavealpha($imageTop, true);
+
+        // Накладываем второе изображение на первое с нужным смещением
+        imagecopy($imageMerge, $imageBottom, $xBottom, $yBottom, 0, 0, imagesx($imageBottom), imagesy($imageBottom));
+        imagecopy($imageMerge, $imageTop, $xTop, $yTop, 0, 0, imagesx($imageTop), imagesy($imageTop));
+
+        return $imageMerge;
+
+    }
+
+/* Колобок для поиграться
+     private function imageRoll($image, $file){
+        $anim = new GifCreator\AnimGif();
+        $frames[0] = $image;
+        $durations = [];
+        $i = 1;
+        for($a=360; $a>0; $a=$a-20){
+            $tmp = $this->rotateImage($image, $a);
+            $frames[$i] = $tmp;
+            $durations[$i++] = 1/1000;
+        }
+
+        $anim->create($frames, $durations);
+
+        $anim->save($file);
+    }
+*/
 }
