@@ -16,9 +16,6 @@
 
 $config = [
 
-    // Дддебб-ба-ба-баг нужен?
-    'debug' => true,
-
     // Ширина и высота поля для захвата
     'width' => 640,
     'height' => 480,
@@ -33,6 +30,11 @@ $config = [
     // Сколько времени держать на экране форму если морда пропала из поля зрения
     'formWait' => 10,
 
+    // Где будут храниться фотографии
+    'foto' => 'foto',
+
+    // Где хранятся маски
+    'masks' => 'masks',
 ];
 
 //--------------------------------------------------------------
@@ -40,22 +42,21 @@ $config = [
 include_once 'application.php';
 //include_once 'libs/GifCreator/AnimGif.php';
 
-$app = new application($config);
-
 // Проверим есть ли у клиента id сессии
 session_start();
-// и если нет, создадим
+
 if(!isset($_SESSION['id'])){
-    $_SESSION['id'] = $app->getRandom(20);
+    $_SESSION['id'] = application::getRandom(20);
 }
 
-// Временный файл
-$tmp_dir = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-$config['tmp_file'] = $tmp_dir.DIRECTORY_SEPARATOR.$_SESSION['id'].'.jpg';
+$config['tmp_dir'] = $tmp_dir = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+
+$config['sessionId'] = $_SESSION['id'];
 
 // закроем и запишем сессию, чтобы не блокировать доступ если клиент еще чего захочет попросить пока мы выполняемся
 session_write_close();
 
+$app = new application($config);
 
 if(isset($_POST['action'])){
     $result = [];

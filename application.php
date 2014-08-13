@@ -19,11 +19,9 @@ class application {
     public function __construct($config){
 
         $this->config = $config;
-
     }
 
     public function sendForm(){
-
 
         return true;
     }
@@ -34,71 +32,73 @@ class application {
 
         $fotoName = $this->getRandom(10);
 
-        $fotoFolder = 'foto';
-
-        $this->getImage($fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'.jpg');
+        $this->getImage($this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'.jpg');
 
         // ToDo запись в базу
         // А пока просто тест
 
-        $image = imagecreatefromjpeg($fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'.jpg');
+        // Автоматически определяем морду лица, вырезаем, расширяем, поворачиваем
+        $autoimage = $this->autoImage($this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'.jpg');
+        imagejpeg($autoimage, $this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'_autocrop.jpg');
 
-        $pokemon = $this->mergeImage(
-            $image,
-            imagecreatefrompng('/home/aagafonov/PhpstormProjects/test/public/masks/morda.png'),
-            0,
-            0
-        );
-        imagejpeg($pokemon, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_glass.jpg');
+        $masks = $this->getMasks();
 
-        // Соотношение сторон вырезанного прямоугольника 0.715
-        $image = $this->cropImage($image,255, 25, 775, 753);
-        imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_crop.jpg');
-
-        //-----------------------------------------------------------------------------------------
-        //$resize = $this->resizeImage($image, 112, 160);
-        //imagejpeg($resize, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_resize.jpg');
-
-        //$this->imageRoll($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_bun.gif');
-
-        //$image = $this->rotateImage($image,0);
-        //imagejpeg($image, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_rotate.jpg');
-
-        //-----------------------------------------------------------------------------------------
-        // merge for pokemon 1
-        $pokemon = $this->mergeImage(
-            $this->resizeImage($image, 298, 416),
-            imagecreatefrompng('/home/aagafonov/PhpstormProjects/test/public/masks/pokemon_.png'),
-            450,
-            100
-        );
-        imagejpeg($pokemon, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_pokemon1.jpg');
-
-        // merge for pokemon 2
-        $pokemon = $this->mergeImage(
-            $this->resizeImage($image, 186, 300),
-            imagecreatefrompng('/home/aagafonov/PhpstormProjects/test/public/masks/youloveit.png'),
-            570,
-            480
-        );
-        imagejpeg($pokemon, $fotoFolder.DIRECTORY_SEPARATOR.$fotoName.'_pokemon2.jpg');
+        foreach($masks as $key => $mask){
+            $image = $this->createImage(
+                $autoimage, // detected face
+                $mask['file'], // poster for face
+                $mask['width'], // width face
+                $mask['angle'], //angle face
+                $mask['x'], // x position face
+                $mask['y'] // y position face
+            );
+            imagejpeg($image, $this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'_'.$key.'.jpg');
+        }
 
         return $formId;
     }
 
+    private function getMasks(){
+        $cacheFile = $this->config['masks'].DIRECTORY_SEPARATOR.'masks.json';
+        if (is_readable($cacheFile)){
+            $masks = json_decode(file_get_contents($cacheFile), true);
+        } else {
+            $masks = [];
+
+            foreach(glob($this->config['masks'].DIRECTORY_SEPARATOR.'*png') as $file){
+                $params = explode('_', $file);
+                $dbg[] = $file;
+                if(count($params) == 5){
+                    $masks[str_replace($this->config['masks'].DIRECTORY_SEPARATOR, '', $params[0])] = [
+                        'file' => $file,
+                        'width' => $params[1],
+                        'angle' => $params[2],
+                        'x' => $params[3],
+                        'y' => $params[4]
+                    ];
+                }
+
+            };
+            //file_put_contents('debug.txt', var_export($dbg,true).var_export($masks,true));
+            file_put_contents($cacheFile, json_encode($masks));
+        }
+
+        return $masks;
+    }
     public function isFace(){
-        $this->getImage($this->config['tmp_file']);
-        if ($face = $this->faceDetect($this->config['tmp_file'])){
+        $result = false;
+        $tmpFile = $this->config['tmp_dir'].DIRECTORY_SEPARATOR.$this->config['sessionId'].'.jpg';
+        $this->getImage($tmpFile);
+        if ($face = $this->faceDetect($tmpFile)){
             // Если морда достаточно высока и широка, она нам подходит
             if($face['w'] > $this->config['faceWidth']/100 and $face['h'] > $this->config['faceHeight']/100){
-                return true;
-            } else {
-                return false;
+                $result = true;
             }
         }
+        return $result;
     }
 
-    public function getRandom($size){
+    static public function getRandom($size){
         $chars="qazxswedcvfrtgbnhyujmkiolp1234567890QAZXSWEDCVFRTGBNHYUJMKIOLP";
         $lenght=StrLen($chars)-1;
         $result=null;
@@ -120,16 +120,54 @@ class application {
         if(count($faceCoor = explode(' ', $face)) == 4){
             $result['x'] = $faceCoor[0];
             $result['y'] = $faceCoor[1];
-            $result['h'] = $faceCoor[2];
-            $result['w'] = $faceCoor[3];
-            return $result;
+            $result['w'] = $faceCoor[2];
+            $result['h'] = $faceCoor[3];
         } else {
-            return false;
+            $result = false;
         }
+
+        return $result;
     }
 
 
 // Хелперы для работы с изображениями
+
+    private function autoImage($file){
+        $detect = $this->faceDetect($file);
+
+        $face = imagecreatefromjpeg($file);
+
+        $x = imagesx($face);
+        $y = imagesy($face);
+        //Реально определенное
+        $fromX = $x * $detect['x'];
+        $fromY = $y * $detect['y'];
+        $detectWidth = $x * $detect['w'];
+        $detectHeight = $y * $detect['h'];
+        $toX = $fromX + $detectWidth;
+        $toY = $fromY + $detectHeight;
+        //Увеличим высоту, чтоб добавить лоб и подбородок, который обычно обрезается в OpenCV
+        $fromY = $fromY - ($detectHeight * 0.10);
+        $toY = $toY + ($detectHeight * 0.20);
+
+        $face = $this->cropImage($face, $fromX, $fromY, $toX, $toY);
+
+        return $face;
+    }
+
+    private function createImage($image, $poster, $width, $angle, $positionX, $positionY){
+        $height = imagesy($image) * ($width/imagesx($image));
+        $image = $this->resizeImage($image, $width, $height);
+        $image = $this->rotateImage($image, $angle);
+        $image = $this->mergeImage(
+            $image,
+            imagecreatefrompng($poster),
+            $positionX,
+            $positionY
+        );
+
+        return $image;
+    }
 
     private function cropImage($image, $fromX, $fromY, $toX, $toY){
         $width = $toX - $fromX;
@@ -163,21 +201,4 @@ class application {
 
     }
 
-/* Колобок для поиграться
-     private function imageRoll($image, $file){
-        $anim = new GifCreator\AnimGif();
-        $frames[0] = $image;
-        $durations = [];
-        $i = 1;
-        for($a=360; $a>0; $a=$a-20){
-            $tmp = $this->rotateImage($image, $a);
-            $frames[$i] = $tmp;
-            $durations[$i++] = 1/1000;
-        }
-
-        $anim->create($frames, $durations);
-
-        $anim->save($file);
-    }
-*/
 }
