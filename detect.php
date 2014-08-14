@@ -1,6 +1,6 @@
 <?php
 /**
- * @package public.
+ * @package test.
  * @author Supme
  * @copyright Supme 2014
  * @license http://opensource.org/licenses/MIT MIT License	
@@ -13,7 +13,6 @@
  *	Please see the license.txt file for more information.
  *
  */
-
 $config = [
 
     // Ширина и высота поля для захвата
@@ -37,10 +36,7 @@ $config = [
     'masks' => 'masks',
 ];
 
-//--------------------------------------------------------------
-
 include_once 'application.php';
-//include_once 'libs/GifCreator/AnimGif.php';
 
 // Проверим есть ли у клиента id сессии
 session_start();
@@ -57,26 +53,13 @@ session_write_close();
 
 $app = new application($config);
 
-if(isset($_POST['action'])){
+if(isset($_POST['action']) and $_POST['action'] == 'detectFace'){
     $result = [];
-    switch($_POST['action']){
-        case 'detectFace':
-            $result['isFace'] = $app->isFace();
-            break;
-        case 'flashFace':
-            $result['formId'] = $app->flashFace();
-            break;
-        case 'sendForm':
-            $result['status'] = $app->sendForm();
-            break;
-        default:
-            $result['error'] = 'No such action';
-    }
+    $result['isFace'] = $app->isFace();
 
     // Выдаем результат
     header('Content-Type: application/json');
     echo json_encode($result);
-
 } else {
     echo '
     <h2 style="text-align: center">
@@ -84,4 +67,3 @@ if(isset($_POST['action'])){
             <small><code>(Короче, чего ты тут потерял?)</code></small>
     </h2>';
 }
-

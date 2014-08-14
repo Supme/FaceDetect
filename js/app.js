@@ -123,7 +123,7 @@ window.setInterval(function(){
         var base64dataUrl = canvas.toDataURL('image/jpeg', 0.1); // цифры это качество сжатия jpeg
         $.ajax({
             type: "POST",
-            url: "app.php",
+            url: "detect.php",
             data: {
                 action: 'detectFace',
                 imgBase64: base64dataUrl

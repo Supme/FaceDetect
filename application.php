@@ -26,6 +26,7 @@ class application {
         return true;
     }
 
+    // Фотоснимок
     public function flashFace(){
 
         $formId = $this->getRandom(5);
@@ -38,14 +39,14 @@ class application {
         // А пока просто тест
 
         // Автоматически определяем морду лица, вырезаем, расширяем, поворачиваем
-        $autoimage = $this->autoImage($this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'.jpg');
-        imagejpeg($autoimage, $this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'_autocrop.jpg');
+        $face = $this->cropImage($this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'.jpg');
+        imagejpeg($face, $this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'_autocrop.jpg');
 
         $masks = $this->getMasks();
 
         foreach($masks as $key => $mask){
             $image = $this->createImage(
-                $autoimage, // detected face
+                $face, // detected face
                 $mask['file'], // poster for face
                 $mask['width'], // width face
                 $mask['angle'], //angle face
@@ -58,23 +59,26 @@ class application {
         return $formId;
     }
 
+    // Получаем список масок, беря параметры из названия файлов
     private function getMasks(){
+        // Если есть файл с кэшем масок и их параметров
         $cacheFile = $this->config['masks'].DIRECTORY_SEPARATOR.'masks.json';
         if (is_readable($cacheFile)){
+            // ...тогда берем его
             $masks = json_decode(file_get_contents($cacheFile), true);
         } else {
+            // ...нет, значит создадим его
             $masks = [];
-
             foreach(glob($this->config['masks'].DIRECTORY_SEPARATOR.'*png') as $file){
                 $params = explode('_', $file);
                 $dbg[] = $file;
                 if(count($params) == 5){
                     $masks[str_replace($this->config['masks'].DIRECTORY_SEPARATOR, '', $params[0])] = [
                         'file' => $file,
-                        'width' => $params[1],
-                        'angle' => $params[2],
-                        'x' => $params[3],
-                        'y' => $params[4]
+                        'width' => (int)$params[1],
+                        'angle' => (int)$params[2],
+                        'x' => (int)$params[3],
+                        'y' => (int)$params[4]
                     ];
                 }
 
@@ -85,6 +89,8 @@ class application {
 
         return $masks;
     }
+
+    // Проверка на наличие подходящего письма
     public function isFace(){
         $result = false;
         $tmpFile = $this->config['tmp_dir'].DIRECTORY_SEPARATOR.$this->config['sessionId'].'.jpg';
@@ -98,22 +104,14 @@ class application {
         return $result;
     }
 
-    static public function getRandom($size){
-        $chars="qazxswedcvfrtgbnhyujmkiolp1234567890QAZXSWEDCVFRTGBNHYUJMKIOLP";
-        $lenght=StrLen($chars)-1;
-        $result=null;
-        while($size--)
-            $result.=$chars[rand(0,$lenght)];
-
-        return $result;
-    }
-
+    // Получаем от клиента картинку
     private function getImage($file){
         $data = $_POST['imgBase64'];
         $uri =  substr($data,strpos($data,",")+1);
         file_put_contents($file, base64_decode($uri));
     }
 
+    // Нахождение лица с помощью OpenCV
     private function faceDetect($file){
         $face = exec('./bin/find-face --cascade=./cascade/haarcascade_frontalface_default.xml '.$file);
         // Если OpenCV отдал нам 4 значения, значит он выполнился удачно
@@ -129,16 +127,14 @@ class application {
         return $result;
     }
 
-
-// Хелперы для работы с изображениями
-
-    private function autoImage($file){
+    // Находим лицо на картинке и вырезаем его
+    private function cropImage($file){
         $detect = $this->faceDetect($file);
 
-        $face = imagecreatefromjpeg($file);
+        $image = imagecreatefromjpeg($file);
 
-        $x = imagesx($face);
-        $y = imagesy($face);
+        $x = imagesx($image);
+        $y = imagesy($image);
         //Реально определенное
         $fromX = $x * $detect['x'];
         $fromY = $y * $detect['y'];
@@ -150,55 +146,69 @@ class application {
         $fromY = $fromY - ($detectHeight * 0.10);
         $toY = $toY + ($detectHeight * 0.20);
 
-        $face = $this->cropImage($face, $fromX, $fromY, $toX, $toY);
+        // Вырезаем лицо из картинки по полученым координатам
+        $width = $toX - $fromX;
+        $height = $toY - $fromY;
+        $face = imagecreatetruecolor($width, $height);
+        imagecopyresampled($face, $image, 0, 0, $fromX, $fromY, $width, $height, $width, $height);
 
         return $face;
     }
 
+    // Вставка лица в постер
     private function createImage($image, $poster, $width, $angle, $positionX, $positionY){
-        $height = imagesy($image) * ($width/imagesx($image));
-        $image = $this->resizeImage($image, $width, $height);
-        $image = $this->rotateImage($image, $angle);
-        $image = $this->mergeImage(
+
+        // Ресайзим с сохранением пропорций
+        $height = imagesy($image) * ((int)$width/imagesx($image));
+        $imageTmp = imagecreatetruecolor((int)$width, $height);
+        imagecopyresampled($imageTmp, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
+
+        // Поворачиваем
+        $image = imagerotate($imageTmp, (int)$angle, hexdec('FFFFFF'));
+
+        // Берем постер
+        $imagePoster = imagecreatefrompng($poster);
+        // Сохраняем альфа-канал.
+        imagesavealpha($imagePoster, true);
+
+        // ... пустой хост размером с постер
+        $imageTmp = imagecreatetruecolor(imagesx($imagePoster), imagesy($imagePoster));
+
+        // Накладываем на пустой холст морду нужным смещением
+        imagecopy(
+            $imageTmp,
             $image,
-            imagecreatefrompng($poster),
-            $positionX,
-            $positionY
+            (int)$positionX,
+            (int)$positionY,
+            0,
+            0,
+            imagesx($image),
+            imagesy($image)
         );
 
-        return $image;
+        // ... и на все это сверху кидаем постер
+        imagecopy(
+            $imageTmp,
+            $imagePoster,
+            0,
+            0,
+            0,
+            0,
+            imagesx($imagePoster),
+            imagesy($imagePoster)
+        );
+
+        return $imageTmp;
     }
 
-    private function cropImage($image, $fromX, $fromY, $toX, $toY){
-        $width = $toX - $fromX;
-        $height = $toY - $fromY;
-        $imageCroped = imagecreatetruecolor($width, $height);
-        imagecopyresampled($imageCroped, $image, 0, 0, $fromX, $fromY, $width, $height, $width, $height);
-        return $imageCroped;
+    // Генератор случайных строк
+    static public function getRandom($size){
+        $chars="qazxswedcvfrtgbnhyujmkiolp1234567890QAZXSWEDCVFRTGBNHYUJMKIOLP";
+        $lenght=StrLen($chars)-1;
+        $result=null;
+        while($size--)
+            $result.=$chars[rand(0,$lenght)];
+
+        return $result;
     }
-
-    private function resizeImage($image, $width, $height){
-        $imageResized = imagecreatetruecolor($width, $height);
-        imagecopyresampled($imageResized, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
-        return $imageResized;
-    }
-
-    private function rotateImage($image, $angle){
-        return imagerotate($image, $angle, hexdec('FFFFFF'));
-    }
-
-    private function mergeImage($imageBottom, $imageTop, $xBottom=0, $yBottom=0, $xTop=0, $yTop=0){
-        $imageMerge = imagecreatetruecolor(imagesx($imageTop), imagesy($imageTop));
-
-        // Сохраняем альфа-канал.
-        imagesavealpha($imageTop, true);
-
-        // Накладываем второе изображение на первое с нужным смещением
-        imagecopy($imageMerge, $imageBottom, $xBottom, $yBottom, 0, 0, imagesx($imageBottom), imagesy($imageBottom));
-        imagecopy($imageMerge, $imageTop, $xTop, $yTop, 0, 0, imagesx($imageTop), imagesy($imageTop));
-
-        return $imageMerge;
-
-    }
-
 }
