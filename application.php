@@ -17,11 +17,23 @@
 class application {
 
     public function __construct($config){
-
         $this->config = $config;
     }
 
-    public function sendForm(){
+    public function sendForm($formId){
+        $mail = new PHPMailer();
+        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'], $this->config['dbUser'], $this->config['dbPass']);
+
+        $query = $this->db->prepare('SELECT photoId, fName, mNamel, lName, gender, email, phone FROM people WHERE formId = ?');
+        $query->execute([$formId]);
+        $people = $query->fetch();
+
+        /*
+        $query = $this->db->prepare('UPDATE people SET fName = ? WHERE formId = ?');
+        $query->execute([$formId]);
+        */
+
+
 
         return true;
     }
@@ -31,20 +43,23 @@ class application {
 
         $formId = $this->getRandom(5);
 
-        $fotoName = $this->getRandom(10);
+        $photoId = $this->getRandom(10);
 
-        $this->getImage($this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'.jpg');
+        // Запись в базу начальных значений
+        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'], $this->config['dbUser'], $this->config['dbPass']);
+        $query = $this->db->prepare('INSERT INTO people (formId, photoId) VALUES (?, ?)');
+        $query->execute([$formId, $photoId]);
 
-        // ToDo запись в базу
-        // А пока просто тест
+        // А пока просто наделаем постеров
+        $this->getImage($this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'.jpg');
 
         // Автоматически определяем морду лица, вырезаем, расширяем, поворачиваем
-        $face = $this->cropImage($this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'.jpg');
-        imagejpeg($face, $this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'_autocrop.jpg');
+        $face = $this->cropImage($this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'.jpg');
+        imagejpeg($face, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_autocrop.jpg');
 
         $masks = $this->getMasks();
 
-        foreach($masks as $key => $mask){
+        foreach($masks as $name => $mask){
             $image = $this->createImage(
                 $face, // detected face
                 $mask['file'], // poster for face
@@ -53,7 +68,10 @@ class application {
                 $mask['x'], // x position face
                 $mask['y'] // y position face
             );
-            imagejpeg($image, $this->config['foto'].DIRECTORY_SEPARATOR.$fotoName.'_'.$key.'.jpg');
+            imagejpeg($image, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_'.$name.'.jpg');
+
+            $query = $this->db->prepare('INSERT INTO photos (photoId, name) VALUES (?, ?)');
+            $query->execute([$photoId, $name]);
         }
 
         return $formId;

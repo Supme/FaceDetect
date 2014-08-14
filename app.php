@@ -31,16 +31,22 @@ $config = [
     'formWait' => 10,
 
     // Где будут храниться фотографии
-    'foto' => 'foto',
+    'photo' => 'photo',
 
     // Где хранятся маски
     'masks' => 'masks',
+
+    // База данных
+    'dbHost' => 'localhost',
+    'dbName' => 'photosalun',
+    'dbUser' => 'photosalun',
+    'dbPass' => 'uRSY9v5jmCas4H4L',
 ];
 
 //--------------------------------------------------------------
 
 include_once 'application.php';
-//include_once 'libs/GifCreator/AnimGif.php';
+include_once 'libs/PHPMailer/PHPMailerAutoload.php';
 
 // Проверим есть ли у клиента id сессии
 session_start();
