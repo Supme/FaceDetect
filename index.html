@@ -40,7 +40,7 @@
             <div class="modal-body">
                 <div class="tab-content">
                     <div class="tab-pane active">
-                        <form id="contact-form" class="form-horizontal" action="app.php" method="post">
+                        <form id="contact-form" class="form-horizontal" action="javascript:void(0);">
                             <fieldset>
                                 <legend>
                                     Теперь небольшая анкета<br/>
@@ -55,6 +55,14 @@
                                     </div>
                                 </div>
 
+
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="lname">Отчество</label>
+                                    <div class="col-md-8">
+                                        <input id="mname" name="mname" placeholder="Ваше отчество" class="form-control input-md keyboardInput" lang="ru" required="" type="text">
+                                    </div>
+                                </div>
+
                                 <div class="form-group">
                                     <label class="col-md-2 control-label" for="lname">Фамилия</label>
                                     <div class="col-md-8">
@@ -63,11 +71,11 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label" for="sex">Ваш пол</label>
+                                    <label class="col-md-2 control-label" for="gender">Ваш пол</label>
                                     <div class="col-md-4">
-                                        <select id="sex" name="sex" class="form-control">
-                                            <option value="male">Мужской</option>
-                                            <option value="female">Женский</option>
+                                        <select id="gender" name="gender" class="form-control">
+                                            <option value="m">Мужской</option>
+                                            <option value="f">Женский</option>
                                         </select>
                                     </div>
                                 </div>
@@ -79,23 +87,10 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label class="col-md-4 control-label" for="agree">
-                                        Согласен с условиями<br/>
-                                        <p class="small help-block"><a href='#'>Условия использования сервиса</a></p>
-                                    </label>
-                                    <div class="col-md-4">
-                                        <div class="input-group">
-                                            <input id="agree" name="agree" class="form-control" type="checkbox">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!--input id="fid" type="hidden" name="fid" value=""/-->
-                                <input type="hidden" value="sendForm" name="action" />
+                                <input id="formId" type="hidden" name="formId" value=""/>
 
                                 <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary btn-large">Отправить</button>
+                                    <button class="btn btn-primary btn-large" onclick="sendForm()">Отправить</button>
                                     <button class="btn" onclick="clearForm()">Очистить</button>
                                 </div>
 
@@ -103,24 +98,29 @@
                         </form>
 
                         <script type="text/javascript">
-
                             $('#contact-form').validate({
                                 rules: {
                                     fname: {
                                         minlength: 2,
+                                        maxlength:50,
+                                        required: true
+                                    },
+                                    mname: {
+                                        minlength: 2,
+                                        maxlength:50,
                                         required: true
                                     },
                                     lname: {
                                         minlength: 2,
+                                        maxlength:50,
                                         required: true
                                     },
                                     email: {
+                                        maxlength:200,
                                         required: true,
                                         email: true
-                                    },
-                                    agree: {
-                                        required: true
-                                    }        },
+                                    }
+                                },
                                 highlight: function(element) {
                                     $(element).closest('.control-group').removeClass('success').addClass('error');
                                 },
@@ -131,7 +131,10 @@
                                 }
                             });
 
-                            $( "#submit" ).click();
+//                            $( "#submit" ).click(function(){
+//                                console.log('Отправка формы');
+//                            }
+//                            );
                         </script>
 
                     </div>

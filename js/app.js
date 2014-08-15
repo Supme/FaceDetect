@@ -14,16 +14,18 @@
  */
 
 // Конфигурационные переменные
-var flashWait = 3; // секунды до снимка
-var formWait = 30; // секунды до таймаута заполнения формы, если морда исчезла
+var flashWait = 6; // секунды до снимка
+var formWait = 60; // секунды до таймаута заполнения формы, если морда исчезла
+var regardsWait = 10;
 var formAddress = 'http://test.dmbasis.ru/?id='; // где потом можно заполнить форму будет?
 
 // рабочие переменные, что бы не запутаться- все глобальные
 var $action;
-var $flashTimer = flashWait;
-var $formTimer = formWait;
-var $flash = false;
-var $isFace = false;
+var $flashTimer;
+var $formTimer;
+var $regardsTimer;
+var $flash;
+var $isFace;
 var $formId;
 
 // и глобальные изображение и поток
@@ -40,6 +42,12 @@ window.setInterval(function(){
 
     switch ($action){
         case 'init':
+            $flashTimer = flashWait;
+            $formTimer = formWait;
+            $regardsTimer = regardsWait;
+            $flash = false;
+            $isFace = false;
+
             canvas = document.getElementById('canvas');
             video = document.getElementById('video');
             context = canvas.getContext('2d');
@@ -114,6 +122,17 @@ window.setInterval(function(){
 
             break;
 
+        case 'regards':
+            if($regardsTimer>0){
+                --$regardsTimer;
+            } else {
+                showMessage('danger', '<strong>Следующий!</strong>');
+                $regardsTimer = regardsWait;
+                $action = 'init';
+            }
+
+            break;
+
         default:
             console.log('Документ не готов. Инициализация.')
     }
@@ -142,6 +161,30 @@ window.setInterval(function(){
 
 // Функции и действия
 
+function sendForm(){
+    console.info('SendForm');
+    $('#poster').hide();
+    $.ajax({
+        type: "POST",
+        url: "app.php",
+        data: {
+            action: 'sendForm',
+            fname: $('#fname').val(),
+            mname: $('#mname').val(),
+            lname: $('#lname').val(),
+            gender: $('#gender').val(),
+            email: $('#email').val(),
+            formId: $('#formId').val()
+        },
+        success:function( msg ) {
+            console.info(msg.status);
+            showForm(false);
+            showMessage('warning', '<strong>Спасибо! Фото отправленно на почтовый ящик! Готовится следующий...</strong>');
+            $action = 'regards';
+        }
+    })
+}
+
 function flashFace(){
     context.drawImage(video, 0, 0, video.width, video.height);
     var base64dataUrl = canvas.toDataURL('image/jpeg');
@@ -154,6 +197,7 @@ function flashFace(){
         },
         success:function( msg ) {
             $formId = msg.formId;
+            $('#formId').val($formId);
             console.info($formId);
         }
     })

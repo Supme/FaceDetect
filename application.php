@@ -20,20 +20,57 @@ class application {
         $this->config = $config;
     }
 
-    public function sendForm($formId){
-        $mail = new PHPMailer();
-        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'], $this->config['dbUser'], $this->config['dbPass']);
+    public function sendForm(){
+        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'].';charset=UTF8', $this->config['dbUser'], $this->config['dbPass']);
 
-        $query = $this->db->prepare('SELECT photoId, fName, mNamel, lName, gender, email, phone FROM people WHERE formId = ?');
-        $query->execute([$formId]);
+        $query = $this->db->prepare('SELECT photoId, fname, mname, lname, gender, email FROM people WHERE formId = ?');
+        $query->execute([$_POST['formId']]);
         $people = $query->fetch();
 
-        /*
-        $query = $this->db->prepare('UPDATE people SET fName = ? WHERE formId = ?');
-        $query->execute([$formId]);
-        */
+        $form = [
+            $_POST['fname'],
+            $_POST['mname'],
+            $_POST['lname'],
+            $_POST['gender'],
+            $_POST['email'],
+            $_POST['formId'],
+        ];
+
+        $query = $this->db->prepare('UPDATE people SET fname = ?, mname = ?, lname = ?, gender = ?, email = ? WHERE formId = ?');
+        $query->execute($form);
+
+        $query = $this->db->prepare('SELECT name FROM photo WHERE photoId = ?');
+        $query->execute([$people['photoId']]);
+        $photo = $query->fetchAll();
+
+        $mail = new PHPMailer();
+
+        $mail->isSMTP();                                      // Set mailer to use SMTP
+        $mail->Host = 'kladr.biz';  // Specify main and backup SMTP servers
+        $mail->Port = 587;
+        $mail->SMTPAuth = true;                               // Enable SMTP authentication
+        $mail->Username = 'test@dmbasis.email';                 // SMTP username
+        $mail->Password = '';                           // SMTP password
+        $mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
+
+        $mail->From = 'test@dmbasis.email';
+        $mail->FromName = 'Picachu';
+        $mail->addAddress($_POST['email'], $_POST['fname']);     // Add a recipient
+        $mail->addReplyTo('test@dmbasis.email', 'Picachu');
 
 
+        foreach($photo as $poster){
+            $mail->addAttachment($this->config['photo'].DIRECTORY_SEPARATOR.$people['photoId'].'_'.$poster['name'].'.jpg');
+        }
+
+        $mail->isHTML(true);                                  // Set email format to HTML
+        $mail->Subject = 'Here is you photo in posters!';
+        $mail->Body    = 'Привет, буфет!<br/>'.$_POST['fname'].' '.$_POST['mname'].' '.$_POST['lname'].' Ваши постеры во вложении.';
+        $mail->AltBody = 'Это для непонимающих HTML клиентов.';
+
+        if(!$mail->send()) {
+            echo 'Mailer Error: ' . $mail->ErrorInfo;
+        }
 
         return true;
     }
@@ -46,16 +83,16 @@ class application {
         $photoId = $this->getRandom(10);
 
         // Запись в базу начальных значений
-        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'], $this->config['dbUser'], $this->config['dbPass']);
+        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'].';charset=UTF8', $this->config['dbUser'], $this->config['dbPass']);
         $query = $this->db->prepare('INSERT INTO people (formId, photoId) VALUES (?, ?)');
         $query->execute([$formId, $photoId]);
 
-        // А пока просто наделаем постеров
+        // Наделаем постеров
         $this->getImage($this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'.jpg');
 
         // Автоматически определяем морду лица, вырезаем, расширяем, поворачиваем
         $face = $this->cropImage($this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'.jpg');
-        imagejpeg($face, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_autocrop.jpg');
+        //imagejpeg($face, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_autocrop.jpg');
 
         $masks = $this->getMasks();
 
@@ -70,7 +107,7 @@ class application {
             );
             imagejpeg($image, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_'.$name.'.jpg');
 
-            $query = $this->db->prepare('INSERT INTO photos (photoId, name) VALUES (?, ?)');
+            $query = $this->db->prepare('INSERT INTO photo (photoId, name) VALUES (?, ?)');
             $query->execute([$photoId, $name]);
         }
 
