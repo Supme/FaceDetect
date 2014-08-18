@@ -50,7 +50,7 @@ class application {
         $mail->Port = 587;
         $mail->SMTPAuth = true;                               // Enable SMTP authentication
         $mail->Username = 'test@dmbasis.email';                 // SMTP username
-        $mail->Password = 'q1w2e3';                           // SMTP password
+        $mail->Password = '';                           // SMTP password
         $mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
 
         $mail->From = 'test@dmbasis.email';
