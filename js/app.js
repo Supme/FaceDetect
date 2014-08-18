@@ -20,15 +20,17 @@ var regardsWait = 10;
 var formAddress = 'http://test.dmbasis.ru/?id='; // где потом можно заполнить форму будет?
 
 // рабочие переменные, что бы не запутаться- все глобальные
-var $action;
-var $flashTimer;
-var $formTimer;
-var $regardsTimer;
-var $flash;
-var $isFace;
-var $formId;
+var $action; // Текущее состояние (действие)
+var $flashTimer; // текущее значение времени до снимка
+var $formTimer; // текущее время от ушедшей из поля зрения морды в состоянии формы
+var $regardsTimer; // текущее время в состоянии "спасибо за анкету"
+var $flash; // bool снимок сделан
+var $isFace; // bool присутствие в поле зрения морды
+var $formId; // Id заполняемой формы
+var $posterTimer;
+var $posterId;
 
-// и глобальные изображение и поток
+// глобальные изображение и поток
 var canvas;
 var video;
 var context;
@@ -47,6 +49,7 @@ window.setInterval(function(){
             $regardsTimer = regardsWait;
             $flash = false;
             $isFace = false;
+            $posterId = 0;
 
             canvas = document.getElementById('canvas');
             video = document.getElementById('video');
@@ -80,6 +83,24 @@ window.setInterval(function(){
                 $flashTimer = flashWait;
                 showMessage('info', '<strong>Подойди ко мне поближе!</strong>');
                 showPoster(true);
+                if($posterTimer>0){
+                    --$posterTimer;
+                } else {
+                    $.ajax({
+                        type: "POST",
+                        url: "app.php",
+                        data: {
+                            action: 'getPoster',
+                            id: $posterId
+                        },
+                        success:function( msg ) {
+                            $posterId = msg.id;
+                            $('#poster').attr('src', msg.src);
+                            $posterTimer = msg.time;
+                            console.info('id: ' + msg.id + '\nposter: ' + msg.src + '\ntime: ' + msg.time);
+                        }
+                    });
+                }
             }
 
             break;
@@ -245,7 +266,11 @@ function showMessage(id, message){
 function showPoster(show){
     if(show){
         $('#poster').show();
+        $('#mask').hide();
+        $('#face').hide();
     } else {
+        $('#mask').show();
+        $('#face').show();
         $('#poster').hide();
     }
 

@@ -36,6 +36,9 @@ $config = [
     // Где хранятся маски
     'masks' => 'masks',
 
+    // Где лежат постеры
+    'posters' => 'posters',
+
     // База данных
     'dbHost' => 'localhost',
     'dbName' => 'photosalun',
@@ -74,6 +77,9 @@ if(isset($_POST['action'])){
             break;
         case 'sendForm':
             $result['status'] = $app->sendForm();
+            break;
+        case 'getPoster':
+            $result = $app->getPoster($_POST['id']);
             break;
         default:
             $result['error'] = 'No such action';

@@ -50,7 +50,7 @@ class application {
         $mail->Port = 587;
         $mail->SMTPAuth = true;                               // Enable SMTP authentication
         $mail->Username = 'test@dmbasis.email';                 // SMTP username
-        $mail->Password = '';                           // SMTP password
+        $mail->Password = 'q1w2e3';                           // SMTP password
         $mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
 
         $mail->From = 'test@dmbasis.email';
@@ -254,6 +254,45 @@ class application {
         );
 
         return $imageTmp;
+    }
+
+    public function getPoster($lastId){
+        // Если есть файл с кэшем масок и их параметров
+        $cacheFile = $this->config['posters'].DIRECTORY_SEPARATOR.'posters.json';
+        if (is_readable($cacheFile)){
+            // ...тогда берем его
+            $posters = json_decode(file_get_contents($cacheFile), true);
+        } else {
+            // ...нет, значит создадим его
+            $posters = [];
+            $id = 1;
+            foreach(glob($this->config['posters'].DIRECTORY_SEPARATOR.'*jpg') as $file){
+                $params = explode('_', $file);
+                $dbg[] = $file;
+                if(count($params) == 2){
+                    $posters[str_replace($this->config['posters'].DIRECTORY_SEPARATOR, '', $params[0])] = [
+                        'id' => $id,
+                        'src' => $file,
+                        'time' => (int)$params[1],
+                    ];
+                    $id++;
+                }
+
+            };
+            file_put_contents($cacheFile, json_encode($posters));
+        }
+
+        if(isset($posters[$lastId+1])){
+            $id = $lastId+1;
+        } else {
+            $id = 1;
+        }
+
+        $result['id'] = $id;
+        $result['src'] = $posters[$id]['src'];
+        $result['time'] = $posters[$id]['time'];
+
+        return $result;
     }
 
     // Генератор случайных строк

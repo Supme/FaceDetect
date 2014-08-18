@@ -23,17 +23,11 @@ body{
     z-index: 500;
 }
 
-#square{
-    position:absolute;
-    top: 55px;
-    left: 5px;
-    z-index: 1000;
-}
-
 #poster{
     position:absolute;
     top: 52px;
-    left: 5px;
+    left: 100px;
+    width: 85%;
     z-index: 1000;
 }
 
