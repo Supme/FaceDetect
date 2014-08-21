@@ -16,7 +16,6 @@
 include_once 'config.php';
 include_once 'libs/PHPMailer/PHPMailerAutoload.php';
 
-echo "--".date(DATE_RFC822)."--\n";
 $db = new PDO('mysql:host='.$config['dbHost'].';dbname='.$config['dbName'].';charset=UTF8', $config['dbUser'], $config['dbPass']);
 
 $query = $db->prepare('SELECT formId, photoId, fname, mname, lname, gender, email FROM people WHERE send IS NULL AND NOT email IS NULL');
@@ -54,9 +53,10 @@ foreach($peoples as $people){
     if($mail->send()) {
         $query = $db->prepare('UPDATE people SET send = NOW() WHERE formId = ?');
         $query->execute([$people['formId']]);
-        echo "send Id:".$people['formId']." for: ".$people['email']."\n";
+        echo "send ok ";
     } else {
-        echo $mail->ErrorInfo."\n";
+        echo "error ".$mail->ErrorInfo." ";
     }
+    echo "Id:".$people['formId']." for: ".$people['email']." at ".date(DATE_RFC822)."\n";
 
 }
