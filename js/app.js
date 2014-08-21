@@ -95,7 +95,7 @@ window.setInterval(function(){
                         },
                         success:function( msg ) {
                             $posterId = msg.id;
-                            $('#poster').attr('src', '../' + msg.src);
+                            slidePoster(msg.src);
                             $posterTimer = msg.time;
                             console.info('id: ' + msg.id + '\nposter: ' + msg.src + '\ntime: ' + msg.time);
                         }
@@ -181,6 +181,17 @@ window.setInterval(function(){
 },1000);
 
 // Функции и действия
+
+function slidePoster(src){
+    var img = $('#poster');
+    img.removeClass();
+    img.addClass('magictime holeOut');
+    setTimeout(function(){
+        img.attr('src', '../' + src);
+        img.removeClass();
+        img.addClass('magictime swap');
+    }, 1000);
+}
 
 function sendForm(){
     console.info('SendForm');

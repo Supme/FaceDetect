@@ -92,43 +92,7 @@ class application {
         {
             $query = $this->db->prepare('UPDATE people SET fname = ?, mname = ?, lname = ?, gender = ?, email = ? WHERE formId = ?');
             $query->execute([$form['fname'], $form['mname'], $form['lname'], $form['gender'], $form['email'], $form['formId']]);
-/*
-            //ToDo вынести отправку писем отдельно по расписанию
-            $query = $this->db->prepare('SELECT name FROM photo WHERE photoId = ?');
-            $query->execute([$people['photoId']]);
-            $photo = $query->fetchAll();
 
-            $mail = new PHPMailer();
-
-            $mail->isSMTP();
-            $mail->Host = $this->config['mailHost'];
-            $mail->Port = $this->config['mailPort'];
-            $mail->SMTPAuth = $this->config['mailSMTPAuth'];
-            $mail->Username = $this->config['mailUsername'];
-            $mail->Password = $this->config['mailPassword'];
-            $mail->SMTPSecure = $this->config['mailSMTPSecure'];
-            $mail->From = $this->config['mailFrom'];
-            $mail->FromName = $this->config['mailFromName'];
-            $mail->addReplyTo($this->config['mailFrom'], $this->config['mailFromName']);
-            $mail->addAddress($_POST['email'], $_POST['fname']);
-
-            foreach($photo as $poster){
-                $mail->addAttachment($this->config['photo'].DIRECTORY_SEPARATOR.$people['photoId'].'_'.$poster['name'].'.jpg');
-            }
-
-            $mail->isHTML(true);
-            $mail->Subject = 'Here is you photo in posters!';
-            $mail->Body    = 'Привет, буфет!<br/>'.$form['fname'].' '.$form['mname'].' '.$form['lname'].' Ваши постеры во вложении.';
-            $mail->AltBody = 'Это для непонимающих HTML клиентов.';
-
-            if(!$mail->send()) {
-                $result = [
-                    'status' => 'error',
-                    'message' => $mail->ErrorInfo,
-                ];
-            }
-
-*/
         }
 
         return $result;
@@ -325,12 +289,12 @@ class application {
             // ...нет, значит создадим его
             $posters = [];
             $id = 1;
-            foreach(glob($this->config['posters'].DIRECTORY_SEPARATOR.'*jpg') as $file){
+            $files = glob($this->config['posters'].DIRECTORY_SEPARATOR.'*jpg');
+            asort($files);
+            foreach($files as $file){
                 $params = explode('_', $file);
-                $dbg[] = $file;
                 if(count($params) == 2){
-                    $posters[str_replace($this->config['posters'].DIRECTORY_SEPARATOR, '', $params[0])] = [
-                        'id' => $id,
+                    $posters[$id] = [
                         'src' => $file,
                         'time' => (int)$params[1],
                     ];
@@ -341,15 +305,13 @@ class application {
             file_put_contents($cacheFile, json_encode($posters));
         }
 
-        if(isset($posters[$lastId+1])){
-            $id = $lastId+1;
-        } else {
-            $id = 1;
+        ++$lastId;
+        if(!isset($posters[$lastId])){
+            $lastId = 1;
         }
-
-        $result['id'] = $id;
-        $result['src'] = $posters[$id]['src'];
-        $result['time'] = $posters[$id]['time'];
+        $result['id'] = $lastId;
+        $result['src'] = $posters[$lastId]['src'];
+        $result['time'] = $posters[$lastId]['time'];
 
         return $result;
     }

@@ -23,12 +23,17 @@ body{
     z-index: 500;
 }
 
-#poster{
+#posterbox{
     position:absolute;
     top: 52px;
     left: 100px;
-    width: 85%;
+    width: 1024px;
+    height: 768px;
     z-index: 1000;
+}
+
+#poster{
+
 }
 
 #info{
