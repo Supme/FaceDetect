@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" type='text/css' media='all' rel="stylesheet">
+    <link href="../css/form.css" type='text/css' media='all' rel='stylesheet'/>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type='text/javascript' src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type='text/javascript' src='../js/jquery.validate.js'></script>
+
+<body>
+
+<div class="tab-content">
+    <div class="tab-pane active">
+        <form id="contact-form" class="form-horizontal" action="../index.php" method="post">
+            <fieldset>
+                <legend>
+                    Теперь небольшая анкета<br/>
+                    <small>(тут что то заполнить надо)</small><br/>
+                </legend>
+
+                <div class="form-group">
+                    <label class="col-md-2 control-label" for="formId">Id анкеты</label>
+                    <div class="col-md-8">
+                        <input id="formId" name="formId" placeholder="Набор букв и цифр полученый Вами при съёмке" class="form-control input-md keyboardInput" lang="ru" required="" type="text" value="{{formId}}">
+                    </div>
+                </div>
+
+
+                {{formContent}}
+
+
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-large" name="remoteForm" type="submit">Отправить</button>
+                </div>
+
+            </fieldset>
+        </form>
+
+        <script type="text/javascript">
+            $('#contact-form').validate({
+                rules: {
+                    fname: {
+                        minlength: 2,
+                        maxlength:50,
+                        required: true
+                    },
+                    mname: {
+                        minlength: 2,
+                        maxlength:50,
+                        required: true
+                    },
+                    lname: {
+                        minlength: 2,
+                        maxlength:50,
+                        required: true
+                    },
+                    email: {
+                        maxlength:200,
+                        required: true,
+                        email: true
+                    }
+                },
+                highlight: function(element) {
+                    $(element).closest('.control-group').removeClass('success').addClass('error');
+                },
+                success: function(element) {
+                    element
+                            .text('OK!').addClass('valid')
+                            .closest('.control-group').removeClass('error').addClass('success');
+                }
+            });
+
+        </script>
+
+    </div>
+</div>
+
+</body>
+</html>

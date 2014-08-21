@@ -21,65 +21,124 @@ class application {
     }
 
     public function sendForm(){
-        $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'].';charset=UTF8', $this->config['dbUser'], $this->config['dbPass']);
+        $result['status'] = 'success';
+        $result['message'] = [];
 
-        $query = $this->db->prepare('SELECT photoId, fname, mname, lname, gender, email FROM people WHERE formId = ?');
-        $query->execute([$_POST['formId']]);
-        $people = $query->fetch();
+        //ToDo сделать валидацию
+        $form['fname'] = htmlspecialchars($_POST['fname']);
+        if($form['fname'] != $_POST['fname'] or strlen($form['fname']) < 2){
+            $result['status'] = 'error';
+            $result['message'][] = 'Not valid fname value: "'.$_POST['fname'].'"';
+        }
 
+        $form['mname'] = htmlspecialchars($_POST['mname']);
+        if($form['mname'] != $_POST['mname'] or strlen($form['mname']) < 2){
+            $result['status'] = 'error';
+            $result['message'][] = 'Not valid mname value: "'.$_POST['mname'].'"';
+        }
+
+        $form['lname'] = htmlspecialchars($_POST['lname']);
+        if($form['lname'] != $_POST['lname'] or strlen($form['lname']) < 2){
+            $result['status'] = 'error'; $l = strlen($form['lname']);
+            $result['message'][] = 'Not valid lname value: "'.$_POST['lname'].'" - "'.$form['lname'].'" - "'.$l.'"';
+        }
+
+        $form['gender'] = $_POST['gender'];
+        if(strlen($form['gender']) != 1){
+            $result['status'] = 'error';
+            $result['message'][] = 'Not valid gender value: "'.$_POST['gender'].'"';
+        }
+
+        if(!($form['email'] = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL))){
+            $result['status'] = 'error';
+            $result['message'][] = 'Not valid email value: "'.$_POST['email'].'"';
+        }
+
+        $form['formId'] = htmlspecialchars($_POST['formId']);
+        if($form['formId'] != $_POST['formId']  or strlen($form['formId']) != 5){
+            $result['status'] = 'error';
+            $result['message'][] = 'Not valid formId value: "'.$_POST['formId'].'"';
+        }
+/*
         $form = [
-            $_POST['fname'],
-            $_POST['mname'],
-            $_POST['lname'],
-            $_POST['gender'],
-            $_POST['email'],
-            $_POST['formId'],
+            'fname' => $_POST['fname'],
+            'mname' => $_POST['mname'],
+            'lname' => $_POST['lname'],
+            'gender' => $_POST['gender'],
+            'email' => $_POST['email'],
+            'formId' => $_POST['formId'],
         ];
+*/
+        if($result['status'] != 'error')
+        {
+            $this->db = new PDO('mysql:host='.$this->config['dbHost'].';dbname='.$this->config['dbName'].';charset=UTF8', $this->config['dbUser'], $this->config['dbPass']);
 
-        $query = $this->db->prepare('UPDATE people SET fname = ?, mname = ?, lname = ?, gender = ?, email = ? WHERE formId = ?');
-        $query->execute($form);
+            $query = $this->db->prepare('SELECT photoId, fname, mname, lname, gender, email, formId FROM people WHERE formId = ?');
+            $query->execute([$form['formId']]);
+            $people = $query->fetch();
 
-        $query = $this->db->prepare('SELECT name FROM photo WHERE photoId = ?');
-        $query->execute([$people['photoId']]);
-        $photo = $query->fetchAll();
+            if($people['formId'] != $form['formId']){
+                $result['status'] = 'error';
+                $result['message'][] = 'Form Id not found';
+            }
 
-        $mail = new PHPMailer();
-
-        $mail->isSMTP();                                      // Set mailer to use SMTP
-        $mail->Host = 'kladr.biz';  // Specify main and backup SMTP servers
-        $mail->Port = 587;
-        $mail->SMTPAuth = true;                               // Enable SMTP authentication
-        $mail->Username = 'test@dmbasis.email';                 // SMTP username
-        $mail->Password = '';                           // SMTP password
-        $mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
-
-        $mail->From = 'test@dmbasis.email';
-        $mail->FromName = 'Picachu';
-        $mail->addAddress($_POST['email'], $_POST['fname']);     // Add a recipient
-        $mail->addReplyTo('test@dmbasis.email', 'Picachu');
-
-
-        foreach($photo as $poster){
-            $mail->addAttachment($this->config['photo'].DIRECTORY_SEPARATOR.$people['photoId'].'_'.$poster['name'].'.jpg');
+            if($people['email'] != NULL){
+                $result['status'] = 'error';
+                $result['message'][] = 'Form ready';
+            }
         }
 
-        $mail->isHTML(true);                                  // Set email format to HTML
-        $mail->Subject = 'Here is you photo in posters!';
-        $mail->Body    = 'Привет, буфет!<br/>'.$_POST['fname'].' '.$_POST['mname'].' '.$_POST['lname'].' Ваши постеры во вложении.';
-        $mail->AltBody = 'Это для непонимающих HTML клиентов.';
+        if($result['status'] != 'error')
+        {
+            $query = $this->db->prepare('UPDATE people SET fname = ?, mname = ?, lname = ?, gender = ?, email = ? WHERE formId = ?');
+            $query->execute([$form['fname'], $form['mname'], $form['lname'], $form['gender'], $form['email'], $form['formId']]);
+/*
+            //ToDo вынести отправку писем отдельно по расписанию
+            $query = $this->db->prepare('SELECT name FROM photo WHERE photoId = ?');
+            $query->execute([$people['photoId']]);
+            $photo = $query->fetchAll();
 
-        if(!$mail->send()) {
-            echo 'Mailer Error: ' . $mail->ErrorInfo;
+            $mail = new PHPMailer();
+
+            $mail->isSMTP();
+            $mail->Host = $this->config['mailHost'];
+            $mail->Port = $this->config['mailPort'];
+            $mail->SMTPAuth = $this->config['mailSMTPAuth'];
+            $mail->Username = $this->config['mailUsername'];
+            $mail->Password = $this->config['mailPassword'];
+            $mail->SMTPSecure = $this->config['mailSMTPSecure'];
+            $mail->From = $this->config['mailFrom'];
+            $mail->FromName = $this->config['mailFromName'];
+            $mail->addReplyTo($this->config['mailFrom'], $this->config['mailFromName']);
+            $mail->addAddress($_POST['email'], $_POST['fname']);
+
+            foreach($photo as $poster){
+                $mail->addAttachment($this->config['photo'].DIRECTORY_SEPARATOR.$people['photoId'].'_'.$poster['name'].'.jpg');
+            }
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Here is you photo in posters!';
+            $mail->Body    = 'Привет, буфет!<br/>'.$form['fname'].' '.$form['mname'].' '.$form['lname'].' Ваши постеры во вложении.';
+            $mail->AltBody = 'Это для непонимающих HTML клиентов.';
+
+            if(!$mail->send()) {
+                $result = [
+                    'status' => 'error',
+                    'message' => $mail->ErrorInfo,
+                ];
+            }
+
+*/
         }
 
-        return true;
+        return $result;
     }
 
     // Фотоснимок
     public function flashFace(){
 
+        // ToDo Надеюсь повторяющиеся не сгенерятся, поэтому не проверяю на существование, хотя может сделать запрос к базе?
         $formId = $this->getRandom(5);
-
         $photoId = $this->getRandom(10);
 
         // Запись в базу начальных значений

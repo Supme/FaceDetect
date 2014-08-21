@@ -17,7 +17,6 @@
 var flashWait = 6; // секунды до снимка
 var formWait = 60; // секунды до таймаута заполнения формы, если морда исчезла
 var regardsWait = 10;
-var formAddress = 'http://test.dmbasis.ru/?id='; // где потом можно заполнить форму будет?
 
 // рабочие переменные, что бы не запутаться- все глобальные
 var $action; // Текущее состояние (действие)
@@ -27,6 +26,7 @@ var $regardsTimer; // текущее время в состоянии "спас�
 var $flash; // bool снимок сделан
 var $isFace; // bool присутствие в поле зрения морды
 var $formId; // Id заполняемой формы
+var $formAddress; // где потом можно заполнить форму будет?
 var $posterTimer;
 var $posterId;
 
@@ -88,14 +88,14 @@ window.setInterval(function(){
                 } else {
                     $.ajax({
                         type: "POST",
-                        url: "app.php",
+                        url: "../index.php",
                         data: {
                             action: 'getPoster',
                             id: $posterId
                         },
                         success:function( msg ) {
                             $posterId = msg.id;
-                            $('#poster').attr('src', msg.src);
+                            $('#poster').attr('src', '../' + msg.src);
                             $posterTimer = msg.time;
                             console.info('id: ' + msg.id + '\nposter: ' + msg.src + '\ntime: ' + msg.time);
                         }
@@ -163,7 +163,7 @@ window.setInterval(function(){
         var base64dataUrl = canvas.toDataURL('image/jpeg', 0.1); // цифры это качество сжатия jpeg
         $.ajax({
             type: "POST",
-            url: "detect.php",
+            url: "../index.php",
             data: {
                 action: 'detectFace',
                 imgBase64: base64dataUrl
@@ -187,7 +187,7 @@ function sendForm(){
     $('#poster').hide();
     $.ajax({
         type: "POST",
-        url: "app.php",
+        url: "../index.php",
         data: {
             action: 'sendForm',
             fname: $('#fname').val(),
@@ -211,14 +211,20 @@ function flashFace(){
     var base64dataUrl = canvas.toDataURL('image/jpeg');
     $.ajax({
         type: "POST",
-        url: "app.php",
+        url: "../index.php",
         data: {
             action: 'flashFace',
             imgBase64: base64dataUrl
         },
         success:function( msg ) {
             $formId = msg.formId;
+            $formAddress = msg.url;
             $('#formId').val($formId);
+            $('#qrcode').html(
+                '<img src="../qr.php?text=' + $formAddress + '?' + $formId + '"/><br/>' +
+                'Анкету можно заполнить позже по адресу: ' + $formAddress + '<br/>' +
+                'Id Вашей анкеты: ' + $formId
+            );
             console.info($formId);
         }
     })
@@ -229,7 +235,6 @@ function flashFace(){
 function showForm($show){
     if($show){
 
-        $('#qrcode').html('<img src="./qr.php?text=' + $formId + '"/>');
         $('#form-modal').modal('show');
 
     } else {
