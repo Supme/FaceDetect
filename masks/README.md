@@ -1,3 +1,4 @@
+
 Формат имени файлов масок:
 
 name_w_a_x_y_gamma_r_g_b_bw_.png

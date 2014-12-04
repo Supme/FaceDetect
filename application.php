@@ -1,6 +1,6 @@
 <?php
 /**
- * @package public.
+ * @package Photo kiosk.
  * @author Supme
  * @copyright Supme 2014
  * @license http://opensource.org/licenses/MIT MIT License	
