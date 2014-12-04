@@ -110,12 +110,17 @@ window.setInterval(function(){
                 $action = 'poster';
             } else {
                 showPoster(false);
+                if($flashTimer == 1){
+                    showBird(true);
+                }
                 if($flashTimer>0){
                     showMessage('success', '<strong>Внимание, через ' + $flashTimer + ' сек вылетит птичка</strong>');
                     --$flashTimer;
                 } else {
+                    //ToDo надо бы сделать тут фотовспышку, в виде блинка белым фоном с птичками.
                     showMessage('warning', '<strong>Птичка полетела!!!</strong>');
                     flashFace();
+                    showBird(false);
                     $flash = true;
                     $action = 'form';
                 }
@@ -282,13 +287,26 @@ function showMessage(id, message){
 function showPoster(show){
     if(show){
         $('#poster').show();
-        $('#mask').hide();
+        $('#bird').hide();
         $('#face').hide();
     } else {
-        $('#mask').show();
-        $('#face').show();
         $('#poster').hide();
+        $('#bird').hide();
+        $('#face').show();
     }
-
 }
 
+// показ птички
+function showBird(show) {
+    if (show) {
+        console.log('Птичка!!!');
+        $('#poster').hide();
+        $('#bird').show();
+        $('#face').hide();
+    } else {
+        $('#poster').hide();
+        $('#bird').hide();
+        $('#face').show();
+        console.log('Улетела птичка...');
+    }
+}

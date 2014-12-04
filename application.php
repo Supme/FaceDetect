@@ -24,7 +24,6 @@ class application {
         $result['status'] = 'success';
         $result['message'] = [];
 
-        //ToDo сделать валидацию
         $form['fname'] = htmlspecialchars($_POST['fname']);
         if($form['fname'] != $_POST['fname'] or strlen($form['fname']) < 2){
             $result['status'] = 'error';
@@ -110,13 +109,14 @@ class application {
         $query = $this->db->prepare('INSERT INTO people (formId, photoId) VALUES (?, ?)');
         $query->execute([$formId, $photoId]);
 
-        // Наделаем постеров
+        /*
+         *  Наделаем постеров
+         */
         $this->getImage($this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'.jpg');
-
         // Автоматически определяем морду лица, вырезаем, расширяем, поворачиваем
         $face = $this->cropImage($this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'.jpg');
-        //imagejpeg($face, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_autocrop.jpg');
 
+        // Получим список и конфигурацию масок
         $masks = $this->getMasks();
 
         foreach($masks as $name => $mask){
@@ -126,7 +126,12 @@ class application {
                 $mask['width'], // width face
                 $mask['angle'], //angle face
                 $mask['x'], // x position face
-                $mask['y'] // y position face
+                $mask['y'], // y position face
+                $mask['gamma'], // gamma correction
+                $mask['r'], // r  correction
+                $mask['g'], // g  correction
+                $mask['b'], //  b correction
+                $mask['bw'] //  greyscale
             );
             imagejpeg($image, $this->config['photo'].DIRECTORY_SEPARATOR.$photoId.'_'.$name.'.jpg');
 
@@ -140,7 +145,7 @@ class application {
     // Получаем список масок, беря параметры из названия файлов
     private function getMasks(){
         // Если есть файл с кэшем масок и их параметров
-        $cacheFile = $this->config['masks'].DIRECTORY_SEPARATOR.'masks.json';
+        $cacheFile = $this->config['masks'].DIRECTORY_SEPARATOR.'.masks.json';
         if (is_readable($cacheFile)){
             // ...тогда берем его
             $masks = json_decode(file_get_contents($cacheFile), true);
@@ -150,25 +155,29 @@ class application {
             foreach(glob($this->config['masks'].DIRECTORY_SEPARATOR.'*png') as $file){
                 $params = explode('_', $file);
                 $dbg[] = $file;
-                if(count($params) == 5){
+                if(count($params) == 11){
                     $masks[str_replace($this->config['masks'].DIRECTORY_SEPARATOR, '', $params[0])] = [
                         'file' => $file,
                         'width' => (int)$params[1],
                         'angle' => (int)$params[2],
                         'x' => (int)$params[3],
-                        'y' => (int)$params[4]
+                        'y' => (int)$params[4],
+                        'gamma' => (float)$params[5],
+                        'r' => (int)$params[6],
+                        'g' => (int)$params[7],
+                        'b' => (int)$params[8],
+                        'bw' => (int)$params[9]
                     ];
                 }
-
             };
-            //file_put_contents('debug.txt', var_export($dbg,true).var_export($masks,true));
+
             file_put_contents($cacheFile, json_encode($masks));
         }
 
         return $masks;
     }
 
-    // Проверка на наличие подходящего письма
+    // Проверка на наличие подходящего лица
     public function isFace(){
         $result = false;
         $tmpFile = $this->config['tmp_dir'].DIRECTORY_SEPARATOR.$this->config['sessionId'].'.jpg';
@@ -229,12 +238,13 @@ class application {
         $height = $toY - $fromY;
         $face = imagecreatetruecolor($width, $height);
         imagecopyresampled($face, $image, 0, 0, $fromX, $fromY, $width, $height, $width, $height);
+        imagegammacorrect($image, 1.0, 1+$this->config['gamma']);
 
         return $face;
     }
 
     // Вставка лица в постер
-    private function createImage($image, $poster, $width, $angle, $positionX, $positionY){
+    private function createImage(&$image, $poster, $width, $angle, $positionX, $positionY, $gamma, $r, $g, $b, $bw){
 
         // Ресайзим с сохранением пропорций
         $height = imagesy($image) * ((int)$width/imagesx($image));
@@ -243,6 +253,12 @@ class application {
 
         // Поворачиваем
         $image = imagerotate($imageTmp, (int)$angle, hexdec('FFFFFF'));
+
+        // Гамма коррекция
+        imagegammacorrect($image, 1.0, $gamma);
+
+        // Цвето заливка
+        $this->image_colorize($image,[$r,$g,$b], $bw);
 
         // Берем постер
         $imagePoster = imagecreatefrompng($poster);
@@ -279,6 +295,37 @@ class application {
         return $imageTmp;
     }
 
+    private function image_colorize(&$img,$rgb, $bw) {
+        imageTrueColorToPalette($img,true,256);
+        $numColors = imageColorsTotal($img);
+
+        for ($x = 0; $x < $numColors; $x++) {
+            list($r,$g,$b) = array_values(imageColorsForIndex($img,$x));
+
+            if ($bw){
+                // Чернобелое заливаем цветом
+                $grayscale = ($r + $g + $b) / 3 / 0xff;
+                imageColorSet($img,$x,
+                    $grayscale * $rgb[0],
+                    $grayscale * $rgb[1],
+                    $grayscale * $rgb[2]
+                );
+            } else {
+                // Цветное добавляем цвета
+                imageColorSet($img,$x,
+                    ($r + $rgb[0])/2,
+                    ($g + $rgb[1])/2,
+                    ($b + $rgb[2])/2
+                );
+            }
+
+
+        }
+
+        return true;
+    }
+
+    // Крутилка постеров
     public function getPoster($lastId){
         // Если есть файл с кэшем масок и их параметров
         $cacheFile = $this->config['posters'].DIRECTORY_SEPARATOR.'posters.json';
@@ -300,7 +347,6 @@ class application {
                     ];
                     $id++;
                 }
-
             };
             file_put_contents($cacheFile, json_encode($posters));
         }

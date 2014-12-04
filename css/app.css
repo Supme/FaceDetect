@@ -16,11 +16,12 @@ body{
     z-index: 300;
 }
 
-#mask{
+#bird{
+    background-color: #FFFFFF;
     position:absolute;
     top: 55px;
-    left: 125px;
-    z-index: 500;
+    left: 0px;
+    z-index: 1000;
 }
 
 #posterbox{
